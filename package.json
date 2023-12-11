@@ -7,8 +7,12 @@
     "build": "vue-cli-service build"
   },
   "dependencies": {
+    "@fullhuman/postcss-purgecss": "^5.0.0",
     "agora-rtm-sdk": "^1.5.1",
+    "autoprefixer": "^10.4.16",
     "core-js": "^3.8.3",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.3.6",
     "vue": "^3.2.13",
     "vue-router": "^4.0.3"
   },

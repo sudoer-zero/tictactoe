@@ -1,12 +1,14 @@
 <template>
   <div>
-    <h1>Tic Tac Toe</h1>
+    <h1 class="text-3xl text-blue-600 font-bold">Tic Tac Toe</h1>
     <div v-for="(msg, index) in messages" :key="index">
       {{ msg.user }}: {{ msg.text }}
     </div>
-    <input v-model="message" />
-    <button @click="sendMessage">Send</button>
-    <button @click="joinChannel">Join</button>
+    <input v-model="message" class="border-2 border-teal-600"/>
+    <div class="flex gap-2 py-2">
+    <button @click="sendMessage" class="bg-teal-600 rounded-lg p-1">Send</button>
+    <button @click="joinChannel" class="bg-teal-600 rounded-lg p-1">Join</button>
+    </div>
   </div>
 </template>
 

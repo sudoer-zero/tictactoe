@@ -1,4 +1,4 @@
-import { ref, onMounte } from "vue";
+import { ref } from "vue";
 import AgoraRTM from "agora-rtm-sdk";
 import { useRouter } from "vue-router";
 
@@ -21,9 +21,30 @@ export function useSignal() {
 
   const playerId = Math.floor(Math.random() * 10000);
 
+  const currentPlayer = ref("O");
+
   const signals = ref([]);
 
+  const localSignals = ref([]);
+
+  const remoteSignals = ref([]);
+
+  const mergedSignals = ref([]);
+
   const playersCount = ref(0);
+
+  const playerIndex = ref(0);
+
+  const occourances = ref({});
+
+  const isWinner = ref(null);
+
+  const isDraw = ref(null);
+
+  const isLoser = ref(null);
+
+  const isMyTurn = ref(true);
+  const isOpponentTurn = ref(false);
 
   const showToast = ref(false);
   const toastMessage = ref(null);
@@ -38,6 +59,10 @@ export function useSignal() {
     toastMessage.value = message;
     showToast.value = true;
     closeToast();
+  }
+
+  function findPlayerIndex(arr, target) {
+    playerIndex.value = arr.indexOf(target);
   }
 
   async function login(sessionId) {
@@ -93,8 +118,11 @@ export function useSignal() {
   }
 
   async function getPlayersCount() {
-    const members = await channel.value.getMembers(channel);
+    const members = await channel.value.getMembers(channel.value);
     playersCount.value = members.length;
+    if (playersCount.value <= 2) {
+      findPlayerIndex(members, playerId.toString());
+    }
   }
 
   async function sendSignal(signalObj) {
@@ -102,10 +130,25 @@ export function useSignal() {
       await channel.value.sendMessage({
         text: JSON.stringify(signalObj),
       });
-      signals.value.push({
+      localSignals.value.push({
         text: signalObj,
         playerId: playerId,
       });
+
+      console.log(
+        "Signal sent",
+        localSignals.value[localSignals.value.length - 1].text
+      );
+      const la = localSignals.value[localSignals.value.length - 1];
+      const ar = remoteSignals.value[remoteSignals.value.length - 1];
+      mergedSignals.value = mergeSignals(la.text, ar.text);
+
+      occourances.value = countCharAndNullOccurrences(
+        currentPlayer.value.toString(),
+        mergeSignals(la.text, ar.text)
+      );
+      isMyTurn.value = false;
+      isOpponentTurn.value = true;
     } catch (err) {
       console.log("Error send", err);
     }
@@ -131,11 +174,68 @@ export function useSignal() {
 
   function receiveSignal() {
     channel.value.on("ChannelMessage", (message, memberId) => {
-      signals.value.push({
+      remoteSignals.value.push({
         text: JSON.parse(message.text),
-        userId: memberId,
+        playerId: memberId,
       });
+      const la = localSignals.value[localSignals.value.length - 1];
+      const ar = remoteSignals.value[remoteSignals.value.length - 1];
+      mergedSignals.value = mergeSignals(la.text, ar.text);
+      occourances.value = countCharAndNullOccurrences(
+        currentPlayer.value.toString(),
+        mergeSignals(la.text, ar.text)
+      );
+      isMyTurn.value = true;
+      isOpponentTurn.value = false;
     });
+  }
+
+  function mergeSignals(array1, array2) {
+    const mergedArray = [];
+
+    for (let i = 0; i < Math.max(array1.length, array2.length); i++) {
+      mergedArray[i] = array1[i] !== null ? array1[i] : array2[i];
+    }
+
+    return mergedArray;
+  }
+
+  function countCharAndNullOccurrences(userChar, array) {
+    const countUserChar = array.filter((char) => char === userChar).length;
+    const countNull = array.filter((char) => char === null).length;
+    const otherChar = userChar === "X" ? "O" : "X";
+    const countOtherChar = array.filter((char) => char === otherChar).length;
+    return {
+      userChar: countUserChar,
+      nullValues: countNull,
+      otherChar: countOtherChar,
+    };
+  }
+
+  function checkWinner(boardArray) {
+    const lines = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6],
+    ];
+
+    for (const line of lines) {
+      const [a, b, c] = line;
+      if (
+        boardArray[a] &&
+        boardArray[a] === boardArray[b] &&
+        boardArray[a] === boardArray[c]
+      ) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   return {
@@ -146,6 +246,8 @@ export function useSignal() {
     sendSignal,
     playerId,
     signals,
+    localSignals,
+    remoteSignals,
     playerJoined,
     playerLeft,
     session,
@@ -158,5 +260,15 @@ export function useSignal() {
     isJoined,
     isWaiting,
     isPushed,
+    currentPlayer,
+    playerIndex,
+    mergedSignals,
+    occourances,
+    isMyTurn,
+    isOpponentTurn,
+    isWinner,
+    isLoser,
+    isDraw,
+    checkWinner,
   };
 }

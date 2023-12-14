@@ -5,9 +5,9 @@
       <p class="text-gray-600 text-sm mb-4">The Multiplayer Mode</p>
       <router-link :to="{ name: 'game', params: { session: session } }">
         <button
-          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full text-sm"
         >
-          Start The Game
+          CLICK HERE TO START
         </button>
       </router-link>
     </div>
